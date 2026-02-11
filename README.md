@@ -136,6 +136,3 @@ If you set **`OPENAI_API_KEY`** in `.env`, the copilot sends your data + your qu
   - **Savings consistency**: goal progress, on-track vs behind, completed goals.
   - **Synthesizer**: turns agent outputs into Summary, Key Insights, Risks, Actionable Suggestions.
 
-## Cursor rule
-
-The behavior and output format are encoded in `.cursor/rules/personal-finance-copilot.mdc` so the AI follows the same rules when working in `**/finance/**`, `**/agents/**`, or `**/copilot*` files.
