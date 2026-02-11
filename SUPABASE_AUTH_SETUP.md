@@ -47,10 +47,20 @@ npx ts-node src/scripts/seed-five-users.ts
 
 This creates:
 
-- **5 users** with emails `user1@finance-copilot.test` … `user5@finance-copilot.test`, password `Test123!@#`
+- **5 users** (see Test users below)
 - **5 months** of income (Oct 2024 – Feb 2025) per user
 - **8–15 expenses per month** across Food, Rent, Entertainment, Transport, etc.
 - **2 savings goals** per user (Emergency Fund, Vacation)
+
+### Test users
+
+| Email | Password |
+|-------|----------|
+| user1@finance-copilot.test | Test123!@# |
+| user2@finance-copilot.test | Test123!@# |
+| user3@finance-copilot.test | Test123!@# |
+| user4@finance-copilot.test | Test123!@# |
+| user5@finance-copilot.test | Test123!@# |
 
 ## 5. Test login
 
