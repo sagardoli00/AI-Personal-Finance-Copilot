@@ -3,14 +3,58 @@ import { askCopilot } from "../lib/api";
 import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../lib/supabase";
 
+const CHAT_CACHE_KEY = "finance-copilot-chat";
+const MAX_CACHED_MESSAGES = 100;
+
 type Msg = { role: "user" | "copilot"; text: string };
+
+function loadCachedMessages(userId: string | undefined): Msg[] {
+  if (!userId) return [];
+  try {
+    const raw = localStorage.getItem(`${CHAT_CACHE_KEY}-${userId}`);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter((m): m is Msg => m && typeof m === "object" && (m.role === "user" || m.role === "copilot") && typeof (m as Msg).text === "string")
+      .slice(-MAX_CACHED_MESSAGES);
+  } catch {
+    return [];
+  }
+}
+
+function saveCachedMessages(userId: string | undefined, messages: Msg[]) {
+  if (!userId) return;
+  try {
+    if (messages.length === 0) {
+      localStorage.removeItem(`${CHAT_CACHE_KEY}-${userId}`);
+      return;
+    }
+    const toSave = messages.slice(-MAX_CACHED_MESSAGES);
+    localStorage.setItem(`${CHAT_CACHE_KEY}-${userId}`, JSON.stringify(toSave));
+  } catch {
+    // ignore quota or parse errors
+  }
+}
 
 export function Chat() {
   const { user } = useAuth();
-  const [messages, setMessages] = useState<Msg[]>([]);
+  const userId = user?.id;
+  // Initialize from cache so when we come back from Dashboard/Expense tab, chat continues
+  const [messages, setMessages] = useState<Msg[]>(() => loadCachedMessages(user?.id));
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  // When user switches account, load that user's chat
+  useEffect(() => {
+    setMessages(loadCachedMessages(userId));
+  }, [userId]);
+
+  // Persist to cache when messages change (don't run on first mount with empty — we already init from cache)
+  useEffect(() => {
+    saveCachedMessages(userId, messages);
+  }, [userId, messages]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -40,12 +84,26 @@ export function Chat() {
     }
   }
 
+  function clearChat() {
+    setMessages([]);
+    saveCachedMessages(userId, []);
+  }
+
   return (
     <div className="card">
-      <h2>Ask your copilot</h2>
-      <p className="card-subtitle">
-        Ask anything about your spending, savings, or how to save money.
-      </p>
+      <div className="card-header-row">
+        <div>
+          <h2>Ask your copilot</h2>
+          <p className="card-subtitle" style={{ marginBottom: 0 }}>
+            Ask anything about your spending, savings, or how to save money. Chat is saved for this account.
+          </p>
+        </div>
+        {messages.length > 0 && (
+          <button type="button" className="btn btn-sm" onClick={clearChat}>
+            Clear chat
+          </button>
+        )}
+      </div>
       <div className="chat-messages" role="log" aria-live="polite">
         {messages.length === 0 && !loading && (
           <p className="empty-state">
